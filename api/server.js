@@ -12,6 +12,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 app.use(express.json());
+console.log('Serverless function is starting...');
 
 const uri = process.env.MONGODB_URI;
 
@@ -37,6 +38,14 @@ async function connectToMongo() {
   global._mongoDb = cachedDb;
   return cachedDb;
 }
+
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'API is running' });
+});
+
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
 
 app.get('/api/themavragen', async (req, res) => {
   try {
