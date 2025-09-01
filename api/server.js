@@ -44,4 +44,4 @@ app.get('/api/themavragen', async (req, res) => {
 });
 
 // Export as serverless function for Vercel
-module.exports.handler = serverless(app);
+module.exports = serverless(app);
