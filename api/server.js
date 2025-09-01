@@ -6,48 +6,50 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
 app.use(cors({
-  origin: ['https://hellowereld.com', 'http://localhost:3000'], // no trailing slash
+  origin: ['https://hellowereld.com', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
 app.use(express.json());
 
 const uri = process.env.MONGODB_URI;
-let client;
-let db;
 
-// Lazy MongoDB connection
-async function getDb() {
-  if (db) return db;
+// Use global cache to persist DB connection across invocations
+let cachedClient = global._mongoClient;
+let cachedDb = global._mongoDb;
 
-  if (!client) {
-    client = new MongoClient(uri, {
+async function connectToMongo() {
+  if (cachedDb) return cachedDb;
+
+  if (!cachedClient) {
+    cachedClient = new MongoClient(uri, {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Fail fast if unreachable
     });
-    await client.connect();
+    await cachedClient.connect();
+    global._mongoClient = cachedClient;
     console.log('Connected to MongoDB Atlas');
   }
 
-  db = client.db('taalpal');
-  return db;
+  cachedDb = cachedClient.db('taalpal');
+  global._mongoDb = cachedDb;
+  return cachedDb;
 }
 
-// Routes
 app.get('/api/themavragen', async (req, res) => {
   try {
-    const database = await getDb();
-    const themavragen = await database.collection('themavragen').find({}).toArray();
-    res.json(themavragen);
+    const db = await connectToMongo();
+    const data = await db.collection('themavragen').find({}).toArray();
+    res.json(data);
   } catch (error) {
     console.error('Fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch themavragen' });
   }
 });
 
-// Local dev server (optional)
+// Optional for local testing
 if (process.env.NODE_ENV !== 'production') {
   app.listen(3001, () => console.log('Local server running at http://localhost:3001'));
 }
