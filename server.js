@@ -8,7 +8,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['https://hellowereld.com', 'http://localhost:3000'], // Replace with your GitHub Pages domain
+  origin: ['https://hellowereld.com/', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
@@ -34,12 +34,12 @@ async function connectToMongo() {
 connectToMongo();
 
 // API endpoint to fetch all themes
-app.get('/api/themas', async (req, res) => {
+app.get('/api/themavragen', async (req, res) => {
   try {
-    const themas = await db.collection('themavragen').find({}).toArray();
-    res.json(themas);
+    const themavragen = await db.collection('themavragen').find({}).toArray();
+    res.json(themavragen);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch themas' });
+    res.status(500).json({ error: 'Failed to fetch themavragen' });
   }
 });
 
