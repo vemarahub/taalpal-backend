@@ -1,21 +1,27 @@
 const express = require('express');
+const serverless = require('serverless-http');
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors()); // Allow cross-origin requests from your GitHub Pages frontend
+app.use(cors({
+  origin: ['https://hellowereld.com', 'http://localhost:3000'], // Replace with your GitHub Pages domain
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
 app.use(express.json());
 
 // MongoDB Atlas connection
-const uri = process.env.MONGODB_URI; // Store connection string in .env
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri, { 
+  useNewUrlParser: true, 
+  useUnifiedTopology: true 
+});
 
 let db;
-
 async function connectToMongo() {
   try {
     await client.connect();
@@ -25,7 +31,6 @@ async function connectToMongo() {
     console.error('MongoDB connection error:', error);
   }
 }
-
 connectToMongo();
 
 // API endpoint to fetch all themes
@@ -38,7 +43,5 @@ app.get('/api/themas', async (req, res) => {
   }
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+// Export as serverless function for Vercel
+module.exports.handler = serverless(app);
