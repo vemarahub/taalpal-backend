@@ -8,40 +8,48 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['https://hellowereld.com/', 'http://localhost:3000'],
+  origin: ['https://hellowereld.com', 'http://localhost:3000'], // no trailing slash
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
 app.use(express.json());
 
-// MongoDB Atlas connection
 const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri, { 
-  useNewUrlParser: true, 
-  useUnifiedTopology: true 
-});
-
+let client;
 let db;
-async function connectToMongo() {
-  try {
-    await client.connect();
-    db = client.db('taalpal');
-    console.log('Connected to MongoDB Atlas');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-  }
-}
-connectToMongo();
 
-// API endpoint to fetch all themes
+// Lazy MongoDB connection
+async function getDb() {
+  if (db) return db;
+
+  if (!client) {
+    client = new MongoClient(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    await client.connect();
+    console.log('Connected to MongoDB Atlas');
+  }
+
+  db = client.db('taalpal');
+  return db;
+}
+
+// Routes
 app.get('/api/themavragen', async (req, res) => {
   try {
-    const themavragen = await db.collection('themavragen').find({}).toArray();
+    const database = await getDb();
+    const themavragen = await database.collection('themavragen').find({}).toArray();
     res.json(themavragen);
   } catch (error) {
+    console.error('Fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch themavragen' });
   }
 });
 
-// Export as serverless function for Vercel
+// Local dev server (optional)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(3001, () => console.log('Local server running at http://localhost:3001'));
+}
+
 module.exports = serverless(app);
